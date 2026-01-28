@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:16
+    container_name: teamops-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: teamops
+      POSTGRES_PASSWORD: teamops_password
+      POSTGRES_DB: teamops_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - teamops_pgdata:/var/lib/postgresql/data
+
+volumes:
+  teamops_pgdata:
