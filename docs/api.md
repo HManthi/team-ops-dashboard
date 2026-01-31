@@ -51,3 +51,58 @@ Creates a new ticket and logs a ticket creation event.
 {
   "error": "Internal server error"
 }
+
+### GET / api/tickets
+
+### description
+Returns a list of tickets.
+
+
+---
+#### Success response (200)
+```json
+[
+  {
+    "id": 1,
+    "title": "Investigate API latency",
+    "status": "open",
+    "priority": "high",
+    "createdAt": "2026-01-31T10:15:00Z",
+    "assignedTo": {
+      "id": 1,
+      "name": "Admin user"
+    }
+  }
+]
+
+## GET /api/tickets/:id/events
+
+### Description
+Returns the audit event timeline for a ticket.
+
+---
+
+### Success Response (200)
+```json
+[
+  {
+    "id": 2,
+    "eventType": "ticket_created",
+    "createdAt": "2026-01-30T18:49:06.860Z",
+    "actor": {
+      "id": 1,
+      "email": "admin@teamops.local"
+    },
+    "oldValue": null,
+    "newValue": "{\"title\":\"...\"}"
+  }
+]
+
+
+### 400 – Invalid Ticket ID
+{ "error": "Invalid ticket id" }
+
+### 500 – Server Error
+{ "error": "Internal server error" }
+
+

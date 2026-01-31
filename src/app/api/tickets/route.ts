@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "../../../lib/prisma";
+import { error } from "console";
 
 export async function POST(req: NextRequest) {
     let body:any;
@@ -77,4 +78,63 @@ export async function POST(req: NextRequest) {
         console.error(e);
         return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
+}
+
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+
+    const status = searchParams.get("status"); // open | in_progress | closed
+    const priority = searchParams.get("priority"); // low | medium | high
+    const assignedToIdRaw = searchParams.get("assignedToId");
+    const limitRaw = searchParams.get("limit");
+
+    const assignedToId =
+      assignedToIdRaw !== null ? Number(assignedToIdRaw) : undefined;
+
+    const limit =
+      limitRaw !== null ? Math.min(Math.max(Number(limitRaw), 1), 100) : 50;
+
+    const where: any = {};
+
+    if (status) where.status = status;
+    if (priority) where.priority = priority;
+    if (assignedToIdRaw !== null) {
+      if (Number.isNaN(assignedToId)) {
+        return NextResponse.json(
+          { error: "assignedToId must be a number" },
+          { status: 400 }
+        );
+      }
+      where.assignedToId = assignedToId;
+    }
+
+    const tickets = await prisma.ticket.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      take: limit,
+      include: {
+        assignedTo: { select: { id: true, email: true } },
+        createdBy: { select: { id: true, email: true } },
+      },
+    });
+
+    const result = tickets.map((t) => ({
+        id: t.id,
+        title: t.title,
+        status: t.status,
+        priority: t.priority,
+        createdAt: t.createdAt,
+        assignedTo: t.assignedTo
+            ? { id: t.assignedTo.id, email: t.assignedTo.email }
+            : null,
+        createdBy: { id: t.createdBy.id, email: t.createdBy.email },
+    }));
+
+
+    return NextResponse.json(result, { status: 200 });
+  } catch (e) {
+    console.error(e);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
