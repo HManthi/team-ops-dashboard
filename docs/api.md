@@ -105,4 +105,13 @@ Returns the audit event timeline for a ticket.
 ### 500 – Server Error
 { "error": "Internal server error" }
 
+### PATCH / api/tickets/:id
 
+### description
+updates a ticket (status/priority/assignee) and writes a TicketEvent for each change.
+
+### Request body (example)
+```json
+{ "status": "in_progress" }
+{ "assignedToId": 2 }
+{ "priority": "low" }
