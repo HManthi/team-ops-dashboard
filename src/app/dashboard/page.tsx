@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 type UserMini = { id: number; email: string };
 
@@ -43,12 +43,14 @@ export default function DashboardPage() {
     return params.toString();
   }, [status, priority]);
 
-  async function loadTickets() {
+  const loadTickets = useCallback(async () => {
     setLoadingTickets(true);
     setError(null);
+
     try {
       const res = await fetch(`/api/tickets?${queryString}`);
       if (!res.ok) throw new Error(`Failed to load tickets (${res.status})`);
+
       const data = (await res.json()) as TicketDTO[];
       setTickets(data);
 
@@ -56,44 +58,49 @@ export default function DashboardPage() {
       if (data.length > 0 && selectedId === null) {
         setSelectedId(data[0].id);
       }
+
       if (data.length === 0) {
         setSelectedId(null);
         setEvents([]);
       }
-    } catch (e: any) {
-      setError(e.message ?? "Failed to load tickets");
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Failed to load tickets";
+      setError(message);
     } finally {
       setLoadingTickets(false);
     }
-  }
+  }, [queryString, selectedId]);
 
-  async function loadEvents(ticketId: number) {
+  const loadEvents = useCallback(async (ticketId: number) => {
     setLoadingEvents(true);
     setError(null);
+
     try {
       const res = await fetch(`/api/tickets/${ticketId}/events`);
       if (!res.ok) throw new Error(`Failed to load events (${res.status})`);
+
       const data = (await res.json()) as TicketEventDTO[];
       setEvents(data);
-    } catch (e: any) {
-      setError(e.message ?? "Failed to load events");
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Failed to load events";
+      setError(message);
       setEvents([]);
     } finally {
       setLoadingEvents(false);
     }
-  }
+  }, []);
 
-  // load tickets whenever filters change
+  // load tickets whenever filters change (queryString changes)
   useEffect(() => {
     loadTickets();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [queryString]);
+  }, [loadTickets]);
 
   // load events whenever selected ticket changes
   useEffect(() => {
-    if (selectedId !== null) loadEvents(selectedId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedId]);
+    if (selectedId !== null) {
+      loadEvents(selectedId);
+    }
+  }, [selectedId, loadEvents]);
 
   return (
     <div style={{ padding: 16, fontFamily: "system-ui" }}>
@@ -172,7 +179,6 @@ export default function DashboardPage() {
           <h2 style={{ marginTop: 0 }}>Events</h2>
 
           {selectedId === null && <div>Select a ticket to see events.</div>}
-
           {selectedId !== null && loadingEvents && <div>Loading events...</div>}
 
           {selectedId !== null && !loadingEvents && events.length === 0 && (
